@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pixel Canvas — Restored Clean Build (v6)</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div id="topbar" class="topbar">
+    <label class="chk"><input type="checkbox" id="toggle-grid" checked> Show grid lines</label>
+    <label class="chk"><input type="checkbox" id="toggle-nums" checked> Show quadrant numbers</label>
+  </div>
+  <canvas id="pixelCanvas" aria-label="Pixel canvas"></canvas>
+
+  <div id="popup" class="popup hidden" role="dialog" aria-modal="true">
+    <div class="popup-header">
+      <strong>Color!</strong>
+      <button id="popup-close" title="Close">×</button>
+    </div>
+    <div id="pixel-info" class="mono">Quadrant: – | Column: –, Row: –</div>
+<div class="row">
+  <label for="color-select" class="mono">Palette:</label>
+  <select id="color-select">
+    <!-- Rainbow-first, then off colors, then gray/black/white -->
+    <option style="background:#FF0000;color:#fff;" value="#FF0000">Red</option>
+    <option style="background:#FFA500;color:#000;" value="#FFA500">Orange</option>
+    <option style="background:#FFFF00;color:#000;" value="#FFFF00">Yellow</option>
+    <option style="background:#00FF00;color:#000;" value="#00FF00">Lime</option>
+    <option style="background:#008000;color:#fff;" value="#008000">Green</option>
+    <option style="background:#FFC0CB;color:#000;" value="#FFC0CB">Pink</option>
+    <option style="background:#00FFFF;color:#000;" value="#00FFFF">Cyan</option>
+    <option style="background:#87CEEB;color:#000;" value="#87CEEB">Sky Blue</option>
+    <option style="background:#0000FF;color:#fff;" value="#0000FF">Blue</option>
+    <option style="background:#4B0082;color:#fff;" value="#4B0082">Indigo</option>
+    <option style="background:#8A2BE2;color:#fff;" value="#8A2BE2">Violet</option>
+    <option style="background:#FF00FF;color:#fff;" value="#FF00FF">Magenta</option>
+    <option style="background:#8B4513;color:#fff;" value="#8B4513">Brown</option>
+    <option style="background:#D2B48C;color:#000;" value="#D2B48C">Tan</option>
+    <option style="background:#FFD700;color:#000;" value="#FFD700">Gold</option>
+    <option style="background:#808080;color:#fff;" value="#808080">Gray</option>
+    <option style="background:#000000;color:#fff;" value="#000000">Black</option>
+    <option style="background:#FFFFFF;color:#000;" value="#FFFFFF">White</option>
+  </select>
+  <button id="color-btn">Apply</button>
+</div>
+  </div>
+
+  <script src="./script.js"></script>
+</body>
+</html>
