@@ -10,26 +10,7 @@
   <div id="topbar" class="topbar">
     <label class="chk"><input type="checkbox" id="toggle-grid" checked> Show grid lines</label>
     <label class="chk"><input type="checkbox" id="toggle-nums" checked> Show quadrant numbers</label>
-    <span id="cooldown-msg" class="hidden">Cooling down…</span>
   </div>
-
-  <div id="panel" class="panel">
-    <h3>Auth & Chat</h3>
-    <div class="row">
-      <button id="login-twitch">Twitch Login</button>
-      <span id="status-twitch" class="status">No token</span>
-    </div>
-
-    <div class="row">
-      <div id="test-user" class="user-badge" title="Logged-in username">Not logged in</div>
-    </div>
-    <div class="row">
-      <input id="chat-msg" placeholder="!co 700 200 red  (column row color; commas optional)"/>
-      <button id="chat-send">Send</button>
-    </div>
-    <p class="hint">Login with a token, select a platform, and enter a viewer username. Cooldowns apply <strong>per user, per platform</strong> for 120 seconds.</p>
-  </div>
-
   <canvas id="pixelCanvas" aria-label="Pixel canvas"></canvas>
 
   <div id="popup" class="popup hidden" role="dialog" aria-modal="true">
