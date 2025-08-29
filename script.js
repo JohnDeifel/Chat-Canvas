@@ -35,6 +35,22 @@ const DRAG_THRESHOLD = 3;
 // ------------------------------
 // --- State
 // ------------------------------
+// ------------------------------
+// --- Config (extensible for Twitch/user-based cooldowns later)
+// ------------------------------
+const CONFIG = {
+  baseCooldownMs: 30_000,                 // 30 seconds by default
+  getCurrentUserId: () => 'local-anon',   // placeholder for future auth
+  getCooldownMsForUser: (userId) => CONFIG.baseCooldownMs,
+};
+
+// ------------------------------
+// --- Cooldown state
+// ------------------------------
+// Track cooldown per user for easy expansion later
+const cooldownUntilByUser = new Map(); // userId -> epoch ms
+let cooldownTimerId = null;
+
 let pixelMap = new Map();
 
 let hoveredQuadrant = null;
@@ -96,6 +112,43 @@ const paintPixel = (x, y, color) => { pixelMap.set(`${x},${y}`, color); draw(); 
 const paintPixelRowCol = (row, col, color) => paintPixel(col, row, color);
 
 // ------------------------------
+// --- Cooldown helpers
+// ------------------------------
+const getUserCooldownUntil = (uid = CONFIG.getCurrentUserId()) => cooldownUntilByUser.get(uid) || 0;
+const setUserCooldownUntil  = (t, uid = CONFIG.getCurrentUserId()) => cooldownUntilByUser.set(uid, t);
+const isOnCooldown = (uid = CONFIG.getCurrentUserId()) => Date.now() < getUserCooldownUntil(uid);
+
+function startCooldown() {
+  const uid = CONFIG.getCurrentUserId();
+  const ms = Math.max(0, CONFIG.getCooldownMsForUser(uid) | 0);
+  setUserCooldownUntil(Date.now() + ms, uid);
+
+  if (!cooldownTimerId) {
+    cooldownTimerId = setInterval(() => {
+      updateCooldownUI();
+      if (!isOnCooldown(uid)) {
+        clearInterval(cooldownTimerId);
+        cooldownTimerId = null;
+      }
+    }, 200);
+  }
+  updateCooldownUI();
+}
+
+function updateCooldownUI() {
+  if (!colorButton) return;
+  const uid = CONFIG.getCurrentUserId();
+  if (isOnCooldown(uid)) {
+    const sec = Math.max(0, Math.ceil((getUserCooldownUntil(uid) - Date.now()) / 1000));
+    colorButton.disabled = true;
+    colorButton.textContent = `Apply (${sec}s)`;
+  } else {
+    colorButton.disabled = false;
+    colorButton.textContent = 'Apply';
+  }
+}
+
+// ------------------------------
 // --- Draw
 // ------------------------------
 function draw() {
@@ -116,17 +169,22 @@ function draw() {
 
   ctx.drawImage(baseLayer, 0, 0);
 
+  // outer perimeter (always visible)
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(0,0,0,0.6)";
+  ctx.strokeRect(0, 0, GRID, GRID);
+
+
   // grid lines
   if (showGrid) {
     ctx.lineWidth = 2;
     ctx.strokeStyle = "rgba(0,0,0,0.35)";
-    for (let i = 0; i <= GRID; i += QSIZE) {
+    for (let i = QSIZE; i < GRID; i += QSIZE) {
       ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, GRID); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(GRID, i); ctx.stroke();
     }
   }
-
-  // quadrant numbers
+// quadrant numbers
   if (showNums) {
   ctx.fillStyle = "rgba(0,0,0,0.25)";
   ctx.font = "24px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -248,6 +306,17 @@ canvas.addEventListener("click", e => {
   if (suppressClickOnce) { suppressClickOnce = false; return; }
   const { x, y } = getMouseWorld(e.clientX, e.clientY);
 
+  // If a zoomed quadrant is active but the click is outside its overlay, close the popup and unlock.
+  if (hoveredQuadrant) {
+    const { dx, dy, dw, dh } = overlayRectForQuadrant(hoveredQuadrant);
+    if (x < dx || x >= dx + dw || y < dy || y >= dy + dh) {
+      popup?.classList.add("hidden");
+      hoverLocked = false; lockedQuadrant = null;
+      draw();
+      return;
+    }
+  }
+
   /**
    * When the mouse is over a zoomed-in quadrant (hoveredQuadrant), the overlay
    * extends beyond the boundaries of the base grid. Clicking within this
@@ -289,12 +358,12 @@ canvas.addEventListener("click", e => {
   hoverLocked = true;
   lockedQuadrant = q;
   hoveredQuadrant = q;
-
   // Show or reposition popup near the click
   if (popup) {
     popup.classList.remove("hidden");
     popup.style.left = (e.pageX + 10) + "px";
     popup.style.top  = (e.pageY + 10) + "px";
+    updateCooldownUI();
   }
 
   // Update pixel info: show the quadrant number along with the selected row/column
@@ -316,10 +385,11 @@ popupClose?.addEventListener("click", () => {
 // Apply color
 colorButton?.addEventListener("click", () => {
   if (!selectedPixel) return;
-  paintPixelRowCol(selectedPixel.row, selectedPixel.col, colorSelect.value || "#000");
-  popup.classList.add("hidden");
-  hoverLocked = false; lockedQuadrant = null;
-  draw();
+if (isOnCooldown()) { updateCooldownUI(); return; }
+paintPixelRowCol(selectedPixel.row, selectedPixel.col, colorSelect.value || "#000");
+// Keep popup open so countdown stays visible
+startCooldown();
+draw();
 });
 
 // Zoom
@@ -359,7 +429,7 @@ window.addEventListener("keyup", e => {
 });
 
 // Resize
-window.addEventListener("resize", () => { updateViewport(); draw(); });
+window.addEventListener("resize", () => { updateViewport(); draw(); updateCooldownUI(); });
 
 // Init
-updateViewport(); draw();
+updateViewport(); draw(); updateCooldownUI();
